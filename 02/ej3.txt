@@ -1,0 +1,42 @@
+sem tareas[40] = [[40] 0]
+cola c;
+sem desaprobado[40] = [[40] true ]
+sem mutex = 1;
+
+process Alumno[i:1..40]
+{
+    P(tareas[i]);            -- recibir tarea
+    -- realizar tarea
+    P(mutex);
+    cola.push(i)             -- entregar tarea
+    V(mutex);
+    P(tareas[i]);            -- recibir nota
+    while(desaprobado[i]){
+         -- realizar tarea
+        P(mutex);
+        cola.push(i)         -- entregar tarea
+        V(mutex);
+        P(tareas[i]);        -- recibir nota
+    }
+    -- irse
+}
+
+process Profe
+{
+    cant = 0;
+    for[j:1..40]{
+        -- entregar tarea
+        V(tareas[j]);
+    }
+
+    while(cant < 40){
+        if(not empty(cola)){
+            P(mutex);
+            id = cola.pop();
+            V(mutex);
+            desaprobado[id] = true/false;
+            if(not desaprobado[id]) cant++;
+            V(tareas[id]);
+        }
+    }
+}

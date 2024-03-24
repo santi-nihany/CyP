@@ -1,0 +1,20 @@
+cola c = [inst1, inst2, inst3, inst4, inst5];
+sem rec = 5;
+sem mutex = 1;
+
+process Proceso[i:1..N]
+{
+    P(rec);
+    P(mutex);
+    inst = cola.pop();
+    V(mutex);
+    -- usar instancia
+    P(mutex);
+    cola.push(inst);
+    V(mutex);
+    V(rec);
+}
+
+
+P(s) = <await(s > 0 ) s=s-1 >;
+V(s) = <s=s+1 >;

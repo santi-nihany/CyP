@@ -1,0 +1,21 @@
+sem nTotal = 7;
+sem nTrigo = 5;
+sem nMaiz = 5;
+
+process CamionesTrigo[i:1..T]
+{
+    P(nTrigo);
+    P(nTotal);
+    -- descargar
+    V(nTotal);
+    V(nTrigo);
+}
+
+process CamionesMaiz[j:1..M]
+{
+    P(nMaiz);
+    P(nTotal);
+    -- descargar
+    V(nTotal);
+    V(nMaiz);
+}
