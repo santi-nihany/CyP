@@ -1,0 +1,152 @@
+4. Existen N personas que deben fotocopiar un documento cada una. Resolver cada ítem
+usando semáforos:
+
+a. Implemente una solución suponiendo que existe una única fotocopiadora compartida
+por todas las personas, y las mismas la deben usar de a una persona a la vez, sin importar
+el orden. Existe una función Fotocopiar() llamada por la persona que simula el uso de la
+fotocopiadora. Sólo se deben usar los procesos que representan a las Personas.
+
+sem mutex=1;
+process Personas[i:1..N]
+{
+    P(mutex);
+    Fotocopiar();
+    V(mutex);
+}
+
+b. Modifique la solución de (a) para el caso en que se deba respetar el orden de llegada.
+
+cola c;
+sem mutex = 1, espera[N]=([N] 0);
+boolean libre = true;
+
+process Personas[i:1..N]
+{
+    P(mutex)
+    if(libre){
+        libre=false    
+        V(mutex);
+    } 
+    else {
+        c.push(i);
+        V(mutex);
+        P(espera[i]);
+    }
+    Fotocopiar();
+    P(mutex);
+    if(empty(c)) {
+        libre=true;
+    }
+    else {
+        id = c.pop();
+        V(espera([id]))
+    }
+    V(mutex);
+}
+
+
+c. Modifique la solución de (b) para el caso en que se deba dar prioridad de acuerdo a la
+edad de cada persona (cuando la fotocopiadora está libre la debe usar la persona de mayor
+edad entre las que estén esperando para usarla).
+
+cola c;
+sem mutex = 1, espera[N]=([N] 0);
+boolean libre = true;
+
+process Personas[i:1..N]
+{
+    P(mutex)
+    if(libre){
+        libre=false    
+        V(mutex);
+    } 
+    else {
+        encolar(c, i, edad);
+        V(mutex);
+        P(espera[i]);
+    }
+    Fotocopiar();
+    P(mutex);
+    if(empty(c)) {
+        libre=true;
+    }
+    else {
+        id = c.pop();
+        V(espera([id]))
+    }
+    V(mutex);
+}
+
+d. Modifique la solución de (a) para el caso en que se deba respetar estrictamente el orden
+dado por el identificador del proceso (la persona X no puede usar la fotocopiadora hasta
+que no haya terminado de usarla la persona X-1).
+
+sem mutex = 1, espera[N]=([N] 0);
+espera[0]=1;
+
+process Personas[i:1..N]
+{
+    P(espera[i-1]);
+    Fotocopiar();
+    V(espera[i])
+}
+
+e. Modifique la solución de (b) para el caso en que además haya un Empleado que le indica
+a cada persona cuando debe usar la fotocopiadora.
+
+cola c;
+sem llegue= 0 , mutex = 1, espera[N]=([N] 0);
+
+process Personas[i:1..N]
+{
+    P(mutex);
+    c.push(i);
+    V(mutex);
+    V(llegue);
+    P(espera[i]);
+    Fotocopiar();
+    V(espera[i]);
+}
+
+process Empleado 
+{
+    for[j:1..N]{
+        P(llegue);
+        P(mutex);
+        id = c.pop();
+        V(mutex);
+        V(espera[id]);
+        P(espera[id]);
+    }
+}
+
+
+f. Modificar la solución (e) para el caso en que sean 10 fotocopiadoras. El empleado le indica
+a la persona cuando puede usar una fotocopiadora, y cual debe usar.
+
+cola c;
+sem llegue= 0 , mutex = 1, espera[N]=([N] 0), fotocopiadoras = 10;
+cant = 0;
+
+process Personas[i:1..N]
+{
+    P(mutex);
+    c.push(i);
+    V(mutex);
+    V(llegue);
+    P(espera[i]);
+    Fotocopiar();
+    V(fotocopiadoras);
+}
+
+process Empleado 
+{
+    for[j:1..N]{
+        P(fotocopiadoras);
+        P(llegue);
+        P(mutex);
+        id = c.pop();
+        V(mutex);
+        V(espera[id]);
+    }
+}
