@@ -24,35 +24,28 @@ process Corredor[id: 1..C]
     -- correr
     P(mutex);
     if(libre){
-        if(botellas > 0){
-            botellas--;
-            libre=false;
-            V(mutex)
-        }else{
+        if(botellas == 0){
             V(mutex);
             V(reponer);
             P(lleno);
-            P(mutex);
-            botellas--;
-            libre=false;
-            V(mutex);
         }
+        P(mutex);
+        botellas--;
+        libre=false;
+        V(mutex);
     }else{
         c.push(id);
         V(mutex);
         P(turnos[id]);
         P(mutex);
-        if(botellas > 0 ){
-            botellas--;
-            V(mutex);
-        } else{
+        if(botellas == 0){
             V(mutex);
             V(reponer);
             P(lleno);
-            P(mutex);
-            botellas--;
-            V(mutex)
         }
+        P(mutex);
+        botellas--;
+        V(mutex);
     }
 
     P (mutex);
@@ -66,9 +59,11 @@ process Corredor[id: 1..C]
 
 process Repositor
 {
-    P(reponer);
-    P(mutex);
-    botellas = 20;
-    V(mutex);
-    V(lleno);
+    while(true){
+        P(reponer);
+        P(mutex);
+        botellas = 20;
+        V(mutex);
+        V(lleno);
+    }
 }
