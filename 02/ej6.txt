@@ -1,0 +1,59 @@
+Una empresa de turismo posee 4 combis con capacidad para 25 personas cada una y UN
+vendedor que vende los pasajes a los clientes de acuerdo al orden de llegada. Hay C clientes
+que al llegar intentan comprar un pasaje para una combi en particular (el cliente conoce este
+dato); si aún hay lugar en la combi seleccionada se le da el pasaje y se dirige hacia la combi;
+en caso contrario se retira. Cada combi espera a que suban los 25 pasajeros, luego realiza el
+viaje, y cuando llega al destino deja bajar a todos los pasajeros. Nota: maximizar la
+concurrencia; suponga que para cada combi al menos 25 clientes intentarán comprar pasaje.
+
+cola orden;
+sem llegue = 0, mutexCola = 0, listo[] = [[C] 0], mutexMicro = 0;
+combis[] = [[4] 0];
+aceptado[]= [[C] false];
+cant = 0, subidos = 0, bajados = 0;
+
+process vendedor
+{
+    while (cant < C){
+        P(llegue);                          // espera que le avisen cuando llega un comprador
+        P(mutexCola);                       // ingresa SC
+        (i , combiId) = orden.pop();        // id pasajero, id de combi
+        V(mutexCola);                       // sale SC
+        if(combis[combiId] < 25){           // chekear disponibilidad
+            combis[combiId]++;              // actualiza combi
+            aceptado[i] = true;                // acepta
+        }
+        V(listo[i]);                        // avisa de la compra/no compra
+    }
+    P(subirse);                             // espera a que se suban los pasajeros
+    -- realizar viaje
+    for j:1..100 V(viajeTerminado);         // informa de la terminación del viaje
+    P(bajarse);                             // espera a que se bajen
+}
+
+process comprador[id: 1..C]
+{
+    P(mutexCola);                           // ingresa SC
+    orden.push(id, combiId);                // se pone en la cola
+    V(mutexCola);                           // sale SC
+    V(llegue);                              // avisa que entro en la cola
+    P(listo[id]);                           // espera a que le informen si fue aceptado
+    if(aceptado[id]){
+        P(mutexMicro);
+        subidos++;
+        if(subidos == 100){
+            V(subirse);
+        }
+        V(mutexMicro);
+        P(viajeTerminado);
+        P(mutexMicro);
+        bajados++;
+        if(bajados == 100){
+            V(bajarse);
+        }
+        V(mutexMicro);
+    }else {
+        -- irse
+    }
+
+}
