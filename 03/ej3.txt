@@ -1,0 +1,56 @@
+3) En un corralón de materiales hay un empleado que debe atender a N clientes de acuerdo al
+orden de llegada. Cuando un cliente es llamado por el empleado para ser atendido, le da una
+lista con los productos que comprará, y espera a que el empleado le entregue el
+comprobante de la compra realizada.
+
+process Cliente[id:1..N]
+{
+    text listaP, comp;
+    Corralon.comprar(id, lista, comp);
+}
+
+process Empleado {
+    for[1..N]{
+        Corralon.atenderCliente(lista);
+        // comp = realizarComprobante(lista);
+        Corralon.entregarComprobante(comp);
+    }
+}
+
+Monitor Corralon 
+{
+    bool llegue = true
+    int esperando = 0;
+    cond cola, atender;
+
+    // CLIENTE
+    procedure comprar(id: in int, lista: in text, comp: out text){
+        llegue = true;
+        signal(listo);
+        push(C, id);
+        wait(esperarTurno);
+        lis = lista;
+        signal(okLista);
+        wait(okComp);
+        comp = comprobantes[id];
+    }
+
+    // EMPLEADO
+
+    procedure atenderCliente(lista: in text){
+        if( not llegue ){
+            wait(listo);
+        }
+        signal(esperarTurno);
+        wait(okLista);
+        lista = lis;
+    }
+
+    procedure entregarComprobante(comp: in text){
+        int idAux;
+        pop(C,idAux);
+        comprobantes[idAux] = comp;
+        signal(okComp);
+    }
+    
+}

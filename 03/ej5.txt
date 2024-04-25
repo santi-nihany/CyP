@@ -1,0 +1,80 @@
+Suponga una comisión con 50 alumnos. Cuando los alumnos llegan forman una fila, una
+vez que están los 50 en la fila el jefe de trabajos prácticos les entrega el número de grupo
+(número aleatorio del 1 al 25) de tal manera que dos alumnos tendrán el mismo número de
+grupo (suponga que el jefe posee una función DarNumero() que devuelve en forma aleatoria
+un número del 1 al 25, el jefe de trabajos prácticos no guarda el número que le asigna a
+cada alumno). Cuando un alumno ha recibido su número de grupo comienza a realizar la
+práctica. Al terminar de trabajar, el alumno le avisa al jefe de trabajos prácticos y espera la
+nota. El jefe de trabajos prácticos, cuando han llegado los dos alumnos de un grupo les
+devuelve a ambos la nota del GRUPO (el primer grupo en terminar tendrá como nota 25, el
+segundo 24, y así sucesivamente hasta el último que tendrá nota 1).
+
+
+process Alumno [idA: 1..50]{
+    int idG, nota;
+    text tp;
+
+    Comision.llegada(idG);
+    Comision.hacerTP(idG, tp, nota);
+}
+
+process JTP {
+    gruposC = [(50) 0];
+    Comision.Inicio();
+    Comision.CargarGrupos();
+    for (a:1..50){
+        Comision.corregir();
+    }
+}
+
+
+
+Monitor Comision {
+    int cant = 0;
+    gruposC = [(50) 0];
+    notas = [(25) 0];
+    llegue = [(25) 0];
+
+    // ALUMNOS
+    procedure llegada(idA: in int, idG: out int){
+        cant++;
+        if(cant == 50){
+            signal(inicio);
+        }
+        wait(espera);
+        idG = gruposC[idA];
+    }
+
+    procedure hacerTP(idG: in int, tp: in text, nota: out int){
+        cola.push(idG,tp);
+        esperando++;
+        signal(vcProfesor);
+        wait(vcAlumno[idG]);
+        nota = nota[idG];
+    }
+
+    // JTP
+    procedure Inicio() {
+        if(cant < 50) wait(inicio);
+    }
+
+    procedure CargarGrupos(){
+        for[i: 1..50]{
+            gruposC[i] = DarNumero(); // se puede chequear que no sea numero repetido
+        }
+        signal_all(espera);
+    }
+
+    procedure corregir(){
+        if(esperando == 0) wait(vcProfesor);
+        cola.pop(idG,tp);
+        esperando--;
+        if(llegue[idG] == 0){
+            llegue[idG]++;
+        }else {
+            notas[idG] = corrijo(tp);
+            signal_all(vcAlumno[idG]);
+        }
+    }
+    
+}
