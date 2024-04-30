@@ -1,0 +1,80 @@
+En cada ítem debe realizar una solución concurrente de grano grueso (utilizando <> y/o
+<await B; S>) para el siguiente problema, teniendo en cuenta las condiciones indicadas en el
+item. Existen N personas que deben imprimir un trabajo cada una.
+a) Implemente una solución suponiendo que existe una única impresora compartida por
+todas las personas, y las mismas la deben usar de a una persona a la vez, sin importar el
+orden. Existe una función Imprimir(documento) llamada por la persona que simula el uso
+de la impresora. Sólo se deben usar los procesos que representan a las Personas.
+
+process Persona[id:1..N]{
+    documento = //
+    <Imprimir(documento)>
+}
+
+b) Modifique la solución de (a) para el caso en que se deba respetar el orden de llegada.
+
+cola c;
+int siguiente = -1;
+process Persona[id:1..N]{
+    documento = //
+    <if(siguiente = -1) siguiente = id
+     else encolar(c, id)>
+     <await siguiente == id>
+     Imprimir(documento);
+     <if(empty(c)) siguiente = -1
+      else siguiente = desencolar(c)>;
+}
+
+c) Modifique la solución de (b) para el caso en que se deba respetar el orden de llegada pero
+dando prioridad de acuerdo a la edad de cada persona (cuando la impresora está libre la
+debe usar la persona de mayor edad entre las que hayan solicitado su uso).
+
+cola c;
+int siguiente = -1;
+process Persona[id:1..N]{
+    text documento = //
+    int edad = //
+    <if(siguiente = -1) siguiente = id
+     else encolar(c, edad, id)>
+     <await siguiente == id>
+     Imprimir(documento);
+     <if(empty(c)) siguiente = -1
+      else siguiente = desencolar(c)>;
+}
+
+d) Modifique la solución de (a) para el caso en que se deba respetar estrictamente el orden
+dado por el identificador del proceso (la persona X no puede usar la impresora hasta que
+no haya terminado de usarla la persona X-1).
+
+int siguiente = 1;
+process Persona[id:1..N]{
+    documento = //
+    <await (siguiente == id)>;
+    Imprimir(documento);
+    <siguiente++>
+}
+
+e) Modifique la solución de (c) para el caso en que además hay un proceso Coordinador que
+le indica a cada persona cuando puede usar la impresora.
+
+cola c;
+int siguiente = -1;
+process Persona[id:1..N]{
+    text documento = //
+    int edad = //
+    <encolar(c, edad, id)>
+    <await siguiente == id;>
+    Imprimir(documento);
+    ok = true;
+}
+
+process Coordinador {
+    while(true){
+        <await (not empty(c));
+            desencolar(c, id);
+        >
+        siguiente = id;
+        <await ok>;
+        ok = false;
+    }
+}

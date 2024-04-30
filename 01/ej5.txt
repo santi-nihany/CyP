@@ -1,0 +1,29 @@
+5. Resolver con SENTENCIAS AWAIT (<> y/o <await B; S>) el siguiente problema. En un
+examen final hay P alumnos y 3 profesores. Cuando todos los alumnos han llegado comienza
+el examen. Cada alumno resuelve su examen, lo entrega y espera a que alguno de los
+profesores lo corrija y le indique la nota. Los profesores corrigen los exámenes respectando
+el orden en que los alumnos van entregando
+
+int cant = 0; 
+notas(P)[] = [(P) -1];
+int corregidos = 0;
+
+process Alumno [idA:1..P]{
+    text tp;
+    int nota;
+    <cant++>;               // avisar que llegue
+    <await(cant == P)>;     // esperar a que lleguen 
+    tp = // Resolver
+    <encolar(c,idA,tp)>     // entregar 
+    <await(notas[idA]!= -1)>// esperar nota 
+    nota = notas[idA]       // recibir nota
+    ok[idA]=true;           // avisar que recibi la nota
+}
+
+process Profe [idP: 1..3]{
+    while(){
+        <await (not empty(c)); desencolar(c, idA, tp)>;
+        nota[idA] = // corregir
+        <await(ok[idA])>; //recibió la nota
+    }
+}
