@@ -1,0 +1,40 @@
+// ej3 con correccion sincronica
+
+Process Alumno[idA: 1..40]{
+    P(recibir[idA]);
+    entregas[idA] = hacerTarea(tareas[idA]);
+    P(mutex);
+    cola.push(idA);
+    V(mutex);
+    V(llegue);
+    P(ok);
+    while(not aprobado[idA]){
+        entregas[idA] = // corregir errores
+        V(ok);
+        P(ok);
+    }
+    V(ok);
+}
+
+Process Profe {
+    int terminados = 0;
+    for[i:1..40]{
+        tareas[i] = //asignar tarea
+        V(recibir[i]);
+    }
+    while(terminados < 40){
+        P(llegue);
+        P(mutex);
+        cola.pop(idA);
+        V(mutex);
+        aprobado[idA] = corregir(entregas[idA]);
+        V(ok); // aviso corregido
+        while(not aprobado[idA]){
+            P(ok); // espero correccion
+            aprobado[idA] = corregir(entregas[idA]);
+            V(ok); //aviso corregido
+        }
+        P(ok);
+        terminados++;
+    }
+}

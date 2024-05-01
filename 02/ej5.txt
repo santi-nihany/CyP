@@ -67,3 +67,32 @@ process Repositor
         V(lleno);
     }
 }
+
+
+
+
+
+P(mutex);
+cant++;
+if(cant == C){
+    for[1..C] V(espera);
+}
+V(mutex);
+V(espera);
+-- correr
+P(mutex)
+if(libre){
+    if(botellas == 0){
+        V(mutex);
+        V(reponer);
+        P(lleno);
+    }
+    P(mutex);
+    libre = false;
+    botellas--;
+    V(mutex);
+}else {
+    P(mutex);
+    c.push(id);
+    
+}

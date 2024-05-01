@@ -1,0 +1,63 @@
+1. Resolver con SENTENCIAS AWAIT (© y/o cawait B; S>) el siguiente problema. Para un partido de fútbol se venden E entradas de forma online, y hay P personas (P > E) que intentan comprar una entrada formando una única fila. Para la venta existen 5 boleterías virtuales que van atendiendo los pedidos de las personas de acuerdo con el orden de llegada. Cuando una boleteria atiende a una persona, si aún quedan entradas disponibles le envia el número de entrada vendida, sino le indica que no hay más entradas. Nota: maximizar la concurrencia.
+
+process persona[id:1..P]{
+    <cola.push(id);>
+    <await(llamado[id])>
+    entrada = entrada[id];
+}
+
+process boleterias[b:1..5]{
+    while(true){
+        <await(!empty(cola)); cola.pop(id);>
+        <if(entradas > 0){
+            entrada[id] = entradas;
+            entradas--;
+        }else{
+            entrada[id]= -1;
+        }>
+        llamado[id]=true;
+    }
+}
+
+2. Resolver con SEMÁFOROS el siguiente problema. En un camino turístico hay un puente por donde puede pasar un vehículo a la vez. Hay N autos que deben pasar por el de acuerdo con el orden de llegada. Nota: sólo se pueden usar los procesos que representan a los autos; suponga que existe la función Pasar que simula el paso del auto por el puente.
+
+
+
+
+3. Resolver con MONITORES el siguiente problema. Para un experimento se tiene una red con 15 controladores de temperatura y un módulo central. Los controladores cada cierto tiempo toman la temperatura mediante la función mediri/ y se la envían a la central para que ésta le indique que debe hacer (número de l a 10), y luego realiza esa acción mediante la función actuarO. La central atiende los pedidos de los controladores de acuerdo al orden de llegada, usando la función determinar0 para determinar la acción que deberá hacer ese controlador (número de 1 a 10). Nota: el tiempo que espera cada controlador para tomar nuevamente la temperatura empieza a contar después de haber ejecutado la función actuaro.
+
+process Controlador(idC:1..15){
+    while(true){
+        t= medir();
+        Coordinador.enviarTemperatura(idC, t, accion);
+        actuar(accion);
+        delay(20);
+    }
+}
+
+process ModuloCentral{
+    while(true){
+        Coordinador.recibir(t,idC);
+        accion = determinar(t);
+        Coordinador.enviarAccion(a, idC);
+    }
+}
+
+Monitor Coordinador{
+    procedure enviarTemperatura(idC:in int, t: in int, accion: out int){
+        cola.push(idC, t);
+        signal(vcModulo);
+        wait(vcControlador);
+        accion = accion[idC];
+    }
+
+    procedure recibir(t: out int, idC: out int){
+        if(empty(cola)) wait(vcModulo);
+        cola.pop(idC, t);
+    }
+
+    procedure enviarAccion(a: in int, idC: in int){
+        accion[idC] = a;
+        signal(vcControlador);
+    }
+}

@@ -1,0 +1,74 @@
+1. Resolver con SEMÁFOROS el siguiente problema. Se debe simular el uso de una máquina expendedora de gaseosas
+con capacidad para 100 latas por parte de U usuarios. Además existe un repositor encargado de reponer las latas de
+la máquina. Los usuarios usan la máquina según el orden de llegada. Cuando les toca usarla, sacan una lata y luego
+se retiran. En el caso de que la máquina se quede sin latas, entonces le debe avisar al repositor para que cargue
+nuevamente la máquina en forma completa. Luego de la recarga, saca una lata y se retira. Nota: maximizar la
+concurrencia; mientras se reponen las latas se debe permitir que otros usuarios puedan agregarse a la fila.
+
+int cant = 100;
+
+process Usuario[idU:1..U]{
+    P(mutex);
+    if(not libre){
+        cola.push(idU);
+        V(mutex);
+        P(esperar[id]);
+    }else{
+        libre = false;
+        V(mutex);
+    }
+    if(cantBotellas == 0){
+        V(reponer);
+        P(yaRepuso);
+    }
+    cantBotellas--;
+    P(mutex);
+    if(not empty(c)){
+        cola.pop(idAux);
+        V(esperar[idAux]);
+    }else{
+        libre =true;
+    }
+    V(mutex);
+}
+
+process repositor{
+    while(true){
+        P(reponer);
+        botellas = 100;
+        V(yaRepuso);
+    }
+}
+
+2) Resolver el siguiente problema con MONITORES. En una montaña hay 30 escaladores que en una parte de la subida
+deben utilizar un único paso de a uno a la vez y de acuerdo al orden de llegada al mismo. Nota: sólo se pueden
+utilizar procesos que representen a los escaladores; cada escalador usa sólo una vez el paso.
+
+process escaladores[id:1..30]{
+    Paso.quieroPasar();
+    // uso paso
+    Paso.liberarPaso();
+}
+
+Monitor Paso{
+    int esperando = 0;
+    boolean libre = true;
+    cond esperar;
+    procedure quieroPasar(){
+        if(not libre){
+            esperando++;
+            wait(esperar);
+        } else{
+            libre = false;
+        }
+    }
+
+    procedure liberarPaso(){
+        if(esperando > 0){
+            esperando--;
+            signal(esperar);
+        } else{
+            libre = true;
+        }
+    }
+}
