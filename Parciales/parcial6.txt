@@ -1,0 +1,90 @@
+1. Resolver con SEMÁFOROS el siguiente problema. En un restorán trabajan C cocineros y M mozos. De
+forma repetida, los cocineros preparan un plato y lo dejan listo en la bandeja de platos terminados, mientras
+que los mozos toman los platos de esta bandeja para repartirlos entre los comensales. Tanto los cocineros
+como los mozos trabajan de a un plato por vez. Modele el funcionamiento del restorán considerando que la
+bandeja de platos listos puede almacenar hasta P platos. No es necesario modelar a los comensales ni que
+los procesos terminen.
+
+sem platos = P, mutexCola = 1, llegue = 0;
+cola cola;
+process Cocinero[idC:1..C]{
+    plato p;
+    while(true){
+        p = cocinar();  // cocina
+        P(platos);      // espera a que se libere la bandeja
+        P(mutexCola);   
+        cola.push(p);   // deja el plato en la bandeja
+        V(mutexCola);
+        V(llegue);      // aviso 
+    }
+}
+
+process Mozo[idM:1..M]{
+    plato p;
+    while(true){
+        P(llegue);      // recibe aviso
+        P(mutexCola);
+        cola.pop(p);    // agarra el plato
+        V(mutexCola);
+        despachar(p);   // despachar plato
+        V(platos);      // liberar lugar
+    }
+}
+
+2. Resolver con MONITORES el siguiente problema. En una planta verificadora de vehículos existen 5
+estaciones de verificación. Hay 75 vehículos que van para ser verificados, cada uno conoce el número de
+estación a la cual debe ir. Cada vehículo se dirige a la estación correspondiente y espera a que lo atiendan.
+Una vez que le entregan el comprobante de verificación, el vehículo se retira. Considere que en cada estación
+se atienden a los vehículos de acuerdo con el orden de llegada. Nota: maximizar la concurrencia.
+
+process Vehiculos[idV:1..75]{
+    int numPlanta; // numero
+    text c;     
+    Fila[numPlanta].llegar();
+    PlantaVerificadora[numPlanta].verificar(idV,c);
+    Fila[numPlata].salir();
+}
+
+process Verificador[id:1..5]{
+    while(true){
+        PlantaVerificadora[id].atender();
+    }
+}
+
+Monitor Fila[id:1..5]{
+    procedure llegue(){
+        if(not libre){
+            esperando++;
+            wait(espera);
+        }else{
+            libre = false;
+        }
+    }
+    procedure salir(){
+        if(esperando > 0){
+            esperando--;
+            signal(espera);
+        }else{
+            libre = true;
+        }
+    }
+}
+
+Monitor PlantaVerificadora[idP:1..5]{
+    procedure verificar(idV: in int, c: out text){
+        hayAutoEsperando = true;
+        id = idV;
+        signal(Auto);
+        wait(esperarComprobante);
+        c = comprobante;
+    }
+
+    procedure atender(){
+        if(!hayAutoEsperando){
+            wait(Auto);
+        }
+        hayAutoEsperando=false;
+        comprobante = realizarC(id);
+        signal(esperarComprobante);
+    }
+}

@@ -1,0 +1,67 @@
+1. Un sistema debe validar un conjunto de 10000 transacciones que se encuentran disponibles en una estructura de
+datos. Para ello, el sistema dispone de 7 workers, los cuales trabajan colaborativamente validando de a 1
+transacción por vez cada uno. Cada validación puede tomar un tiempo diferente y para realizarla los workers
+disponen de la función Validar(t), la cual retorna como resultado un número entero entre 0 al 9. Al finalizar el
+procesamiento, el último worker en terminar debe informar la cantidad de transacciones por cada resultado de la
+función de validación. Nota: maximizar la concurrencia.
+
+sem mutexCola = 1;
+
+process worker[idW:1..7]{
+    P(mutexCola);
+    while(not empty(cola)){
+        cola.pop(t);
+        V(mutexCola);
+        res = Validar(t);
+        P(mutexVec[res]);
+        resultados[res]++;
+        V(mutexVec[res]);
+        P(mutexCola);
+    }
+    P(mutexCant);
+    cantLlegados++;
+    if(cantLlegados == 7){
+        if(i:0..9){
+            informar(resultados[i]);
+        }
+    }
+    V(mutexCant);
+}
+
+2) En una empresa trabajan 20 vendedores ambulantes que forman 5 equipos de 4 personas cada uno (cada vendedor
+conoce previamente a que equipo pertenece). Cada equipo se encarga de vender un producto diferente. Las
+personas de un equipo se deben juntar antes de comenzar a trabajar. Luego cada integrante del equipo trabaja
+independientemente del resto vendiendo ejemplares del producto correspondiente. Al terminar cada integrante del
+grupo debe conocer la cantidad de ejemplares vendidos por el grupo. Nota: maximizar la concurrencia.
+
+process vendedor[idV: 1..20]{
+    int e, miC, c;
+    Equipo[e].llegar();
+    miC = trabajar();
+    Equipo[e].obtenerCantidad(miC, c);
+}
+
+Monitor Equipo[idE:1..5]{
+    int cant = 0, ejemplares = 0;
+    cond espera;
+    procedure llegar(){
+        cant++;
+        if(cant == 4){
+            cant = 0;
+            signal_all(espera);
+        }else{
+            wait(espera);
+        }
+    }
+
+    procedure obtenerCantidad(miCantidad:in int, c: out int){
+        ejemplares += miCantidad;
+        cant++;
+        if(cant == 4){
+            signal_all(espera);
+        }else{
+            wait(espera);
+        }
+        c = ejemplares;
+    }
+}
