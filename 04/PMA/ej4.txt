@@ -1,0 +1,50 @@
+4. Simular la atención en un locutorio con 10 cabinas telefónicas, que tiene un empleado que
+se encarga de atender a los clientes. Hay N clientes que al llegar esperan hasta que el
+empleado les indica a que cabina ir, la usan y luego se dirigen al empleado para pagarle. El
+empleado atiende a los clientes en el orden en que hacen los pedidos, pero siempre dando
+prioridad a los que terminaron de usar la cabina. Nota: maximizar la concurrencia; suponga
+que hay una función Cobrar() llamada por el empleado que simula que el empleado le cobra
+al cliente.
+
+chan pedirCabina(idCliente: int);
+chan entregarCabina[1..N](idCabina: int);
+chan liberarCabina(idCabina: int, pago: real, idCli:int);
+chan cobrado[idCli]();
+
+
+
+Process Cliente[idCli:1..N]
+{
+    send pedirCabina(idCli);
+    send atendeme();
+    receive entregarCabina[idCli](idCabina);
+    usarCabina();
+    send liberarCabina(idCabina, pago, idCli);
+    send atendeme();
+    receive cobrado[idCli]();
+}
+
+Process Empleado
+{
+    int cant = 0;
+    int cabinas[10]= {0,0,0,0,0,0,0,0,0,0};
+    while(cant < N){
+        receive(atendeme);
+
+        // si (hay liberando o no hay cabina libre){ actualizar cabina, cobrar }
+        if((not empty(liberarCabina)) or ( not hayCabinaLibre(cabinas))) ->
+            receive liberarCabina(idCabina, pago, idCli);
+            cabinas[idCabina]--;
+            Cobrar(pago);
+            send cobrado[idCli](); 
+        // si (no hay nadie liberando, si hay pidiendo y hay cabina libre) -> actualizar y entregar cabina
+         ((empty(liberarCabina)) and (not empty(pedirCabina)) and (hayCabinaLibre(cabinas))) ->
+                receive pedirCabina(idCli);
+                idCabina = getCabinaLibre(); 
+                cabinas[idCabina]++;
+                cant++;
+                send entregarCabina[idCli](idCabina);
+        fi;
+
+    }
+}

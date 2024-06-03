@@ -1,0 +1,70 @@
+3. Se debe modelar una casa de Comida Rápida, en el cual trabajan 2 cocineros y 3
+vendedores. Además, hay C clientes que dejan un pedido y quedan esperando a que se lo
+alcancen.
+Los pedidos que hacen los clientes son tomados por cualquiera de los vendedores y se lo
+pasan a los cocineros para que realicen el plato. Cuando no hay pedidos para atender, los
+vendedores aprovechan para reponer un pack de bebidas de la heladera (tardan entre 1 y 3
+minutos para hacer esto).
+Repetidamente cada cocinero toma un pedido pendiente dejado por los vendedores, lo
+cocina y se lo entrega directamente al cliente correspondiente.
+Nota: maximizar la concurrencia.
+
+chan pedido(idCli:int, o: orden);           // Input Port: Clientes -> Coordinador 
+chan plato[0..C-1](plato: plato);           // Punto a Punto: Cocinero -> Cliente
+chan atender[0..2](idCli:int, o:orden);     // Punto a Punto: Coordinador -> Vendedor
+chan cocinar(idCli:int, o:orden);           // Mailbox: Coordinador -> Cocineros
+chan libre(idV:int);                        // Input Port: Vendedores -> Coordinador
+
+
+Process Cliente[idCli:0..C-1]
+{
+    orden o;
+    plato plato
+    send pedido(idCli, o);          // enviar orden
+    receive plato[idCli](plato);    // recibir plato
+}
+
+Process Cocinero[idCoci:0..1]
+{
+    int idCli;
+    orden o;
+    plato plato;
+    while(true){
+        receive cocinar(idCli, o);  // recibir orden de idCli
+        plato = cocinar(o);         
+        send plato[idCli](plato);   // enviar plato a idCli
+    }
+}
+
+Process Vendedor[idV:0..2]
+{
+    while(true){
+        send libre(idV);                    // avisar liberado
+        receive atender[idV](idCli, o);     // recibir cliente y orden
+        if(idCli <> -1){                    // si hay cliente
+           send cocinar(idCli, o);             // enviar orden a cocina
+        }else{
+            delay(60);                      // reponer pack
+        }
+    }
+}
+
+Process Coordinador
+{
+    cola cola;
+    int idCli, idV;
+    orden o;
+
+    while(true){
+        recieve libre(idV);
+        idCli = -1;
+        if(not empty(pedido)){          // si hay pedidos
+            receive pedido(idCli, o);       // recibir pedido
+        }
+        send atender[idV](idCli, o);    // enviar pedido (empty: idCli = -1) 
+    }
+}
+
+
+// lesson:  la accion del vendedor puede variar cuando se encuentra listo para recibir pedidos.
+//          Por eso debe recibir un flag en caso de no recibir pedidos. 

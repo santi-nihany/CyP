@@ -1,0 +1,23 @@
+1. Suponga que N personas llegan a la cola de un banco. Para atender a las personas existen 2
+empleados que van atendiendo de a una y por orden de llegada a las personas.
+
+chan atencion(consulta: text; id: int); // canal mailbox, usado como cola
+chan respuesta[1..N](res: text); // canal punto a punto, usado como respuesta privada
+
+Process persona[id:1..N]
+{
+    text c, res;
+    send atencion(c, id);
+    receive respuesta[id](res);
+}
+
+Process empleados[idE:1..2]
+{
+    text c, res;
+    int id;
+    while(true){
+        receive atencion(c,id);
+        res = atender(c);
+        send respuesta[id](res);
+    }
+}

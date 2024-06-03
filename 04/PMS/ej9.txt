@@ -1,0 +1,37 @@
+9. Resolver con PMS (Pasaje de Mensajes SINCRÓNICOS) el siguiente problema. En una
+exposición aeronáutica hay un simulador de vuelo (que debe ser usado con exclusión
+mutua) y un empleado encargado de administrar el uso del mismo. Hay P personas que
+esperan a que el empleado lo deje acceder al simulador, lo usa por un rato y se retira. El
+empleado deja usar el simulador a las personas respetando el orden de llegada. Nota: cada
+persona usa sólo una vez el simulador. 
+
+(Persona[idP]) llegue, idP -> (Admin)
+(Empleado) recibir -> (Admin)
+(Admin) idP -> (Empleado)
+(Empleado) turno -> (Persona[idP])
+(Persona) salir -> (Empleado) 
+
+Process Persona[idP:0..P-1]
+{
+    Admin!llegue(idP);          // encolarse
+    Empleado?turno[idP]();      // esperar turno
+    usarSimulador();            
+    Empleado!salir();           // avisar salida
+}
+
+Process Empleado {
+    while(true){
+        Admin!recibir();        // avisar al admin que esta libre el simulador
+        Admin?persona(idP);     // recibir proxima persona en la fila
+        Persona!turno[idP]();   // avisar a persona que es su turno
+        Persona?salir();        // esperar que persona se retire
+    }
+}
+
+Process Admin {
+    cola buffer;
+    int idP;
+    do Persona[*].llegue(idP) -> push(buffer, idP);                     // encolar personas
+      not empty(buffer); Empleado?recibir() -> pop(buffer, idP);       // si empleado puede recibir y hay gente esperando 
+                                                Empleado!persona(idP);  // enviar proxima persona en la cola al empleado
+}

@@ -1,0 +1,62 @@
+2. Se desea modelar el funcionamiento de un banco en el cual existen 5 cajas para realizar
+pagos. Existen P personas que desean pagar. Para esto cada una selecciona la caja donde
+hay menos personas esperando, una vez seleccionada espera a ser atendido.
+NOTA: maximizando la concurrencia.
+
+chan pedido(id: int);                       // Input Port: cola de pedidos a Coordinador para usar Caja
+chan turno[0..P-1](idCaja: int);            // PaP: Coordinador asigna Caja (id = idCaja) a Persona
+chan libre(idCaja: int);                    // Input Port: Caja avisa a Coordinador que se encuentra libre
+chan pagar[0..4](idP: int, pago: pago);     // PaP: Persona paga a Caja
+chan cobrar[0..P-1](res: res);              // PaP: Caja cobra a Persona
+
+
+Process Persona[idP:0..P-1]
+{
+    send pedido(idP);                           // hacer pedido, encolarse
+    receive turno[idP](idCaja, res);            // esperar respuesta, recibir idCaja
+    send pagar[idCaja](idP, pago);              // pagar a caja
+    receive cobrar[idP](res);                   // esperar hasta recibir respuesta de caja
+}
+
+Process Coordinador
+{
+    int cajas[5] = {0,0,0,0,0};
+    int idCaja;
+
+    for [i: 1..P] {
+        recieve pedido(idP);        // recibir pedido
+        
+        // actualizo cajas libres
+        while(not empty(libre)){
+            receive libre(idCaja);
+            cajas[idCaja]--;
+        }
+
+        idCaja = min(cajas);        // obtener minimo
+        cajas[idCaja]++;            // actualizar cantidad de personas en cola de caja
+        send turno[idP](idCaja);    // enviar numero de caja min
+
+    }
+}
+
+Process Cajas[idCaja: 0..4]
+{
+    pago pago;
+    int idP;
+    res res;
+
+    while(true){
+        receive pagar[idCaja](idP,pago);    // recibir idP y pago
+        res = procesarPago(pago);           
+        send cobrar[idP](res);              // enviar respuesta a idP
+        send libre(idCaja);                 // avisar al coordinador que se encuentra libre
+    }
+}
+
+
+// el cordinador:
+    recibe, actualiza cajas, asigna caja libre
+
+// important:
+    la persona al recibir la caja minima, puede enviar su pago y quedarse esperando a que le cobren.
+    no necesita sincronizar con la caja, se encola en el canal "pagar" y espera a recibir respuesta en el canal "cobrar".
