@@ -16,47 +16,47 @@ procedure Puente is
         entry pasoAuto;
         entry pasoCamioneta;
         entry pasoCamion;
-        entry salida(peso: IN Integer);
+        entry salida (peso : in Integer);
     end puenteT;
 
     task body auto is
-    peso: constant Integer:= 1;
+        peso : constant Integer := 1;
     begin
         puenteT.pasoAuto;
         --  usarPuente();
-        puenteT.salida(peso);
+        puenteT.salida (peso);
     end auto;
 
     task body camioneta is
-    peso: constant Integer:= 2;
+        peso : constant Integer := 2;
     begin
         puenteT.pasoCamioneta;
     end camioneta;
 
     task body camion is
-    peso: constant Integer:= 3;
+        peso : constant Integer := 3;
     begin
         puenteT.pasoCamion;
     end camion;
 
     task body puente is
-        pesoTotal: Integer;
+        pesoTotal : Integer;
     begin
-        pesoTotal:= 0;
+        pesoTotal := 0;
         loop
             select
-                accept salida(peso: IN Integer) do
-                    pesoTotal:= pesoTotal - peso;
+                accept salida (peso : in Integer) do
+                    pesoTotal := pesoTotal - peso;
                 end salida;
-            or
-                when(pesoTotal + 1 <= 5 and pasoCamion'count = 0) => accept pasoAuto;
-            or
-                when(pesoTotal + 2 <= 5 and pasoCamion'count = 0) => accept pasoCamioneta;
-            or
-                when(pesoTotal + 3 <= 5) => accept pasoCamion;
+            or when (pesoTotal + 1 <= 5 and pasoCamion'Count = 0) =>
+                accept pasoAuto;
+            or when (pesoTotal + 2 <= 5 and pasoCamion'Count = 0) =>
+                accept pasoCamioneta;
+            or when (pesoTotal + 3 <= 5) =>
+                accept pasoCamion;
             end select;
         end loop;
-    end;
+    end puente;
 
     A          : constant Integer := 10;
     B          : constant Integer := 15;

@@ -3,31 +3,32 @@
 
 procedure Banco is
 
-Task type cliente;
-task banco is 
-    entry llegada(consulta: IN String; respuesta: OUT String);
-end banco;
+    task type cliente;
+    task banco is
+        entry llegada (consulta : in String; respuesta : out String);
+    end banco;
 
-Task body cliente is
-    res: String;
-begin
-    select 
-        banco.llegada("Hola BRODER", res);
-    or delay 600.0
-        null;
-    end select;
-end cliente;
+    task body cliente is
+        res : String;
+    begin
+        select
+            banco.llegada ("Hola BRODER", res);
+        or
+            delay 600.0;
+            null;
+        end select;
+    end cliente;
 
-Task body banco is
-begin
-    loop
-        accept llegada(consulta: IN String; respuesta: OUT String) do 
-            respuesta:= "Resuelto brooo";
-        end llegada;
-    end loop;
-end;
+    task body banco is
+    begin
+        loop
+            accept llegada (consulta : in String; respuesta : out String) do
+                respuesta := "Resuelto brooo";
+            end llegada;
+        end loop;
+    end banco;
 
-clientes: array(1..10) of cliente;
+    clientes : array (1 .. 10) of cliente;
 
 begin
     null;
