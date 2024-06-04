@@ -16,14 +16,11 @@
 procedure Clinica is
 
     task medico is
-        entry pedidoP (p : in String; idP : in Integer);
-        entry pedidoE (p : in String; idE : in Integer);
+        entry pedidoP (p : in String; res: out String);
+        entry pedidoE (p : in String; res: out String);
         entry nota(nota: in String; idE: in Integer);
     end medico;
-    task type persona is
-        entry identificador (id : in Integer);
-        entry respuesta (res : in String);
-    end persona;
+    task type persona;
     task type enfermera is
         entry identificador (id : in Integer);
         entry dejarNota(notaE: out String; idE: out Integer);
@@ -33,27 +30,22 @@ procedure Clinica is
 
 
     task body medico is
-        pMedico : String;
-        id      : Integer;
-        res     : String;
+        resLocal     : String;
     begin
-        res:= "default";
+        resLocal:= "default";
         loop
             select
-                accept pedidoP (p : in String; idP : in Integer) do     -- prioridad: pedido de persona
-                    pMedico := p;
-                    id      := idP;
+                accept pedidoP (p : in String; res: out String) do     -- prioridad: recibo pedido de persona
+                    -- res:= procesar(p);                                   -- envío respuesta
                 end pedidoP;
-                -- res:= procesar(pMedico);
-                personas (id).respuesta (res);                              -- envío respuesta
             or when (pedidoP'Count = 0) =>                              -- si no hay pedido de persona
                 accept pedidoE (p : in String; res : out String) do         -- recibo pedido de enfermera
-                    -- res:= procesar(p);
+                    -- res:= procesar(p);                                   -- envío respuesta
                 end pedidoE;
             or when (pedidoP'Count = 0 and pedidoE'Count = 0) =>        -- si no hay pedido de persona ni enfermera
                 accept nota(nota: in string; idE: in Integer) do            -- recibo nota pendiente
-                    -- res:= procesar(nota);
-                    enfermeras (idE).respuesta (res);                       -- respondo nota a enfermera
+                    -- resLocal:= procesar(nota);
+                    enfermeras (idE).respuesta (resLocal);                       -- respondo nota a enfermera
                 end nota;
             end select;
         end loop;
@@ -76,11 +68,12 @@ procedure Clinica is
                 else                            -- sino (si hay notas pendientes)
                     push(c, (n,id));                -- encolo nota
                 end if;
-            else                
-                if(priN = "vacio")then              -- si no envian nada instantaneamente
+            else                                    -- si no envian nada instantaneamente
+                if(not (priN = "vacio"))then            -- si hay nota pendiente
                     select
-                        medico.nota(priN, priId);       -- envio nota pendiente a medico (si esta listo para recibir)
-                        if(not empty(c))then                -- actualizo primera nota pendiente
+                        medico.nota(priN, priId);           -- envio nota pendiente a medico (si esta listo para recibir)
+                        -- actualizo primera nota pendiente
+                        if(not empty(c))then
                             pop(c,(n,id));
                             priN:= n;
                             priId:= id;
@@ -100,13 +93,12 @@ procedure Clinica is
         res   : String;
         id    : Integer;
     begin
-        accept identificador (id);
         count := 0;
         while (count < 3) loop
             count := count + 1;
             select
-                medico.pedidoP ("pedido", id);
-                accept respuesta (res); -- consultar: se puede realizar accept acá?
+                medico.pedidoP ("pedido", res);
+                count := 3;
             or
                 delay (300); -- 5min
                 if (count < 3) then
@@ -138,10 +130,14 @@ procedure Clinica is
     enfermeras : array (1 .. E) of enfermera;
     j: Integer;
 begin
-    for j in 1..P loop
-        personas(j).identificador(j);
-    end loop;
     for j in 1..E loop
         enfermeras(j).identificador(j);
     end loop;
 end Clinica;
+
+--  notas:
+--      - medico recibe y resuelve dentro del accept, ya que no tiene nada mas que hacer en ese momento y sus clientes tampoco.
+--      - para persona: Una vez que el medico acepta, se bloquea esperando la respuesta. No continúa el delay.
+--        Si no se envía respuesta con res: out es error grave ya que no es rendezvous, sino PMS.
+--      - uso variables pri en la task consultorio para poder enviar al medico la nota sin necesidad de hacer un pop de la cola.
+--        Puede pensarse como nota "actual", proxima a ser enviada.
